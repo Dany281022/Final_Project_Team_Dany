@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: weekly-sales-forecaster-api
+    runtime: docker
+    envVars:
+      - key: MODEL_PATH
+        value: model.pkl
+        

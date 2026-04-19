@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Weekly Sales Forecaster</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;color:#1a202c;min-height:100vh}
+  header{background:linear-gradient(135deg,#1a365d,#2b6cb0);color:#fff;padding:1.5rem 2rem;display:flex;align-items:center;gap:1rem}
+  header h1{font-size:1.5rem;font-weight:600}
+  header p{font-size:.9rem;opacity:.8;margin-top:.2rem}
+  .badge{background:rgba(255,255,255,.2);padding:.25rem .75rem;border-radius:999px;font-size:.8rem;white-space:nowrap}
+  .container{max-width:1200px;margin:0 auto;padding:1.5rem}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem}
+  .card{background:#fff;border-radius:12px;padding:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .stat-card{text-align:center}
+  .stat-card .num{font-size:2rem;font-weight:700;color:#2b6cb0}
+  .stat-card .lbl{font-size:.8rem;color:#718096;margin-top:.25rem}
+  .card h2{font-size:1rem;font-weight:600;margin-bottom:.5rem;color:#2d3748;border-bottom:2px solid #ebf4ff;padding-bottom:.5rem}
+  .card-note{font-size:.78rem;color:#718096;margin-bottom:.75rem;font-style:italic}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem}
+  .form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:1rem}
+  label{font-size:.82rem;color:#4a5568;display:block;margin-bottom:.25rem}
+  input[type=number],input[type=text]{width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:.6rem .75rem;font-size:.9rem;outline:none;transition:border .2s;font-family:inherit}
+  input:focus{border-color:#2b6cb0}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.7rem 1.25rem;border:none;border-radius:8px;font-size:.9rem;font-weight:500;cursor:pointer;transition:all .2s}
+  .btn-primary{background:#2b6cb0;color:#fff;width:100%;margin-top:.5rem}
+  .btn-primary:hover{background:#2c5282}
+  .btn-purple{background:#6b46c1;color:#fff}
+  .btn-purple:hover{background:#553c9a}
+  .btn-sm{padding:.5rem 1rem;font-size:.85rem;width:auto;margin-top:.75rem}
+  .result{margin-top:1rem;padding:1rem;border-radius:8px;display:none}
+  .result-pos{background:#f0fff4;border-left:4px solid #38a169}
+  .result-neg{background:#ebf8ff;border-left:4px solid #3182ce}
+  .result-warn{background:#fffbeb;border-left:4px solid #d69e2e}
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-top:1rem}
+  .metric{background:#f7fafc;border-radius:8px;padding:.75rem;text-align:center}
+  .metric .val{font-size:1.05rem;font-weight:600;color:#2b6cb0}
+  .metric .lbl{font-size:.75rem;color:#718096;margin-top:.2rem}
+  .llm-box{background:#faf5ff;border-left:4px solid #805ad5;border-radius:8px;padding:1rem;margin-top:1rem;font-size:.88rem;line-height:1.7;color:#44337a;white-space:pre-wrap;display:none}
+  .chat-box{height:260px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;padding:.75rem;background:#f7fafc;display:flex;flex-direction:column;gap:.5rem;margin-bottom:.75rem}
+  .msg{padding:.6rem .9rem;border-radius:10px;max-width:90%;font-size:.88rem;line-height:1.6;white-space:pre-wrap}
+  .msg-user{background:#2b6cb0;color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+  .msg-bot{background:#fff;color:#2d3748;align-self:flex-start;border:1px solid #e2e8f0;border-bottom-left-radius:3px}
+  .msg-thinking{background:#edf2f7;color:#718096;align-self:flex-start;font-style:italic;font-size:.82rem}
+  .chat-input-row{display:flex;gap:.5rem}
+  .chat-input-row input{flex:1}
+  .history-table{width:100%;border-collapse:collapse;font-size:.85rem}
+  .history-table th{background:#ebf4ff;padding:.6rem .75rem;text-align:left;font-weight:500}
+  .history-table td{padding:.6rem .75rem;border-bottom:1px solid #e2e8f0}
+  .section-label{font-size:.82rem;font-weight:600;color:#4a5568;text-transform:uppercase;letter-spacing:.05em;margin:.75rem 0 .5rem}
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media(max-width:768px){.grid-4,.grid-2,.form-grid,.form-grid-3,.metrics{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>📈 Weekly Sales Forecaster</h1>
+    <p>Team Dany | AIE1014 — AI Applied Project + LLM Advisor</p>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+    <span class="badge" id="api-status">⏳ Connecting...</span>
+    <span class="badge" id="model-status">⏳ Model...</span>
+    <span class="badge" id="llm-status">⏳ LLM...</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- KPI Cards -->
+  <div class="grid-4" style="margin-top:1.5rem">
+    <div class="card stat-card"><div class="num">0.9812</div><div class="lbl">R² Score (v2)</div></div>
+    <div class="card stat-card"><div class="num" style="color:#e53e3e">$73K</div><div class="lbl">RMSE per store</div></div>
+    <div class="card stat-card"><div class="num" style="color:#d69e2e">$47K</div><div class="lbl">MAE per store</div></div>
+    <div class="card stat-card"><div class="num" style="color:#38a169">96.4%</div><div class="lbl">RMSE improvement vs v1</div></div>
+  </div>
+
+  <div class="grid-2">
+
+    <!-- LEFT: Form + Result -->
+    <div style="display:flex;flex-direction:column;gap:1.5rem">
+      <div class="card">
+        <h2>🔮 Get Sales Prediction</h2>
+        <p class="card-note">Enter sales data for a single store. Model trained per-store — typical range: $500K — $3M/week.</p>
+
+        <div class="section-label">Lag Features</div>
+        <div class="form-grid">
+          <div><label>Lag 1 — Previous week ($)</label><input type="number" id="lag_1"  value="1500000" min="0"></div>
+          <div><label>Lag 2 — 2 weeks ago ($)</label><input type="number" id="lag_2"  value="1480000" min="0"></div>
+          <div><label>Lag 4 — 4 weeks ago ($)</label><input type="number" id="lag_4"  value="1450000" min="0"></div>
+          <div><label>Lag 8 — 8 weeks ago ($)</label><input type="number" id="lag_8"  value="1430000" min="0"></div>
+          <div><label>Lag 12 — 12 weeks ago ($)</label><input type="number" id="lag_12" value="1400000" min="0"></div>
+          <div><label>Lag 26 — 26 weeks ago ($)</label><input type="number" id="lag_26" value="1390000" min="0"></div>
+          <div><label>Lag 52 — 1 year ago ($)</label><input type="number" id="lag_52" value="1380000" min="0"></div>
+        </div>
+
+        <div class="section-label">Moving Averages & Volatility</div>
+        <div class="form-grid-3">
+          <div><label>MA 4 weeks ($)</label><input type="number" id="ma_4"  value="1465000" min="0"></div>
+          <div><label>MA 12 weeks ($)</label><input type="number" id="ma_12" value="1430000" min="0"></div>
+          <div><label>Std Dev 4 weeks</label><input type="number" id="std_4" value="25000"   min="0"></div>
+        </div>
+
+        <div class="section-label">Date Features</div>
+        <div class="form-grid-3">
+          <div><label>Week of Year</label><input type="number" id="weekofyear" value="14" min="1" max="52"></div>
+          <div><label>Month</label><input type="number" id="month" value="4" min="1" max="12"></div>
+          <div><label>Year</label><input type="number" id="year" value="2026" min="2000" max="2100"></div>
+        </div>
+
+        <button class="btn btn-primary" onclick="predict()" id="predictBtn">🔮 Get Prediction</button>
+
+        <div class="result" id="result">
+          <div id="result-signal" style="font-weight:600;font-size:1.05rem;margin-bottom:.5rem"></div>
+          <div id="result-detail" style="font-size:.9rem;margin-bottom:.5rem"></div>
+          <div id="result-interval" style="font-size:.85rem;color:#4a5568;margin-bottom:.75rem"></div>
+          <div class="metrics" id="result-metrics"></div>
+          <button class="btn btn-purple btn-sm" onclick="explainPrediction()" id="explainBtn">🤖 Explain with AI</button>
+          <div class="llm-box" id="llm-result"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Chart + Chat + Table -->
+    <div style="display:flex;flex-direction:column;gap:1.5rem">
+
+      <div class="card">
+        <h2>📊 Prediction History</h2>
+        <div style="position:relative;height:180px">
+          <canvas id="historyChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>💬 AI Sales Advisor</h2>
+        <div class="chat-box" id="chatBox">
+          <div class="msg msg-bot">Hello! I'm your AI Sales Advisor powered by GPT-4o-mini.
+
+I can help you:
+- Explain your sales forecast in plain English
+- Give inventory & staffing recommendations
+- Answer questions about sales trends
+
+Try: "Explain my last prediction" or "What does a 10% increase mean for staffing?"</div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chatInput" placeholder="Ask anything about your sales forecast..." onkeydown="if(event.key==='Enter')sendChat()"/>
+          <button class="btn btn-purple" style="width:auto;padding:.6rem 1rem" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📋 Recent Predictions</h2>
+        <div style="overflow-x:auto">
+          <table class="history-table">
+            <thead><tr><th>Time</th><th>Forecast</th><th>Signal</th><th>% Change</th></tr></thead>
+            <tbody id="historyBody">
+              <tr><td colspan="4" style="color:#718096;text-align:center;padding:1rem">No predictions yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const API     = '';
+const history = [];
+let histChart = null;
+let lastPred  = null;
+
+window.addEventListener('load', async () => {
+  const now = new Date();
+  document.getElementById('weekofyear').value = getWeek(now);
+  document.getElementById('month').value      = now.getMonth() + 1;
+  document.getElementById('year').value       = now.getFullYear();
+  await checkHealth();
+  initChart();
+});
+
+function getWeek(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+  const y = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - y) / 86400000) + 1) / 7);
+}
+
+async function checkHealth() {
+  try {
+    const r = await fetch(`${API}/health`);
+    const d = await r.json();
+    document.getElementById('api-status').textContent   = '✅ API Online';
+    document.getElementById('model-status').textContent = d.model_loaded ? '✅ Model Ready' : '⚠️ No Model';
+    document.getElementById('llm-status').textContent   = d.llm_ready    ? '✅ LLM Ready'   : '⚠️ No API Key';
+  } catch {
+    document.getElementById('api-status').textContent = '❌ API Offline';
+  }
+}
+
+async function predict() {
+  const btn = document.getElementById('predictBtn');
+  btn.innerHTML = '<span class="spinner"></span> Predicting...';
+  btn.disabled  = true;
+
+  const payload = {
+    lag_1:      +document.getElementById('lag_1').value,
+    lag_2:      +document.getElementById('lag_2').value,
+    lag_4:      +document.getElementById('lag_4').value,
+    lag_8:      +document.getElementById('lag_8').value,
+    lag_12:     +document.getElementById('lag_12').value,
+    lag_26:     +document.getElementById('lag_26').value,
+    lag_52:     +document.getElementById('lag_52').value,
+    ma_4:       +document.getElementById('ma_4').value,
+    ma_12:      +document.getElementById('ma_12').value,
+    std_4:      +document.getElementById('std_4').value,
+    weekofyear: +document.getElementById('weekofyear').value,
+    month:      +document.getElementById('month').value,
+    year:       +document.getElementById('year').value,
+  };
+
+  try {
+    const r = await fetch(`${API}/predict`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const d = await r.json();
+    lastPred = { ...d, lag_1: payload.lag_1, weekofyear: payload.weekofyear, month: payload.month };
+
+    const box = document.getElementById('result');
+    box.className = `result ${d.signal==='Higher demand'?'result-warn':d.signal==='Stable'?'result-pos':'result-neg'}`;
+    box.style.display = 'block';
+
+    const icon = d.signal==='Higher demand'?'🟡':d.signal==='Stable'?'🟢':'🔵';
+    document.getElementById('result-signal').textContent   = `${icon} ${d.signal} — Predicted: ${d.formatted}`;
+    document.getElementById('result-detail').textContent   = `${Math.abs(d.pct_change).toFixed(1)}% ${d.pct_change>=0?'above':'below'} last week ($${payload.lag_1.toLocaleString()})`;
+    document.getElementById('result-interval').textContent = `Prediction Interval: ${d.confidence} (±10%)`;
+    document.getElementById('result-metrics').innerHTML    = `
+      <div class="metric"><div class="val">${d.formatted}</div><div class="lbl">Forecast</div></div>
+      <div class="metric"><div class="val">W${payload.weekofyear}</div><div class="lbl">Week</div></div>
+      <div class="metric"><div class="val">${d.pct_change>0?'+':''}${d.pct_change.toFixed(1)}%</div><div class="lbl">vs Last Week</div></div>
+      <div class="metric"><div class="val">${d.response_time_ms}ms</div><div class="lbl">Response</div></div>
+    `;
+    document.getElementById('llm-result').style.display = 'none';
+
+    const now = new Date();
+    history.unshift({
+      time:     now.toLocaleTimeString(),
+      forecast: d.formatted,
+      signal:   `${icon} ${d.signal}`,
+      pct:      `${d.pct_change>0?'+':''}${d.pct_change.toFixed(1)}%`,
+      value:    d.prediction,
+    });
+    updateTable();
+    updateChart();
+  } catch(e) { alert(`Error: ${e.message}`); }
+
+  btn.innerHTML = '🔮 Get Prediction';
+  btn.disabled  = false;
+}
+
+async function explainPrediction() {
+  if (!lastPred) return;
+  const btn = document.getElementById('explainBtn');
+  btn.innerHTML = '<span class="spinner"></span> Generating AI explanation...';
+  btn.disabled  = true;
+
+  const box = document.getElementById('llm-result');
+  box.style.display = 'block';
+  box.textContent   = '🤖 AI is analyzing your forecast...';
+
+  try {
+    const r = await fetch(`${API}/explain`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        prediction: lastPred.prediction,
+        pct_change: lastPred.pct_change,
+        signal:     lastPred.signal,
+        lag_1:      lastPred.lag_1,
+        weekofyear: lastPred.weekofyear,
+        month:      lastPred.month,
+      }),
+    });
+    const d = await r.json();
+    box.textContent = `🤖 ${d.provider} Analysis:\n\n${d.explanation}`;
+  } catch(e) {
+    box.textContent = `Error: ${e.message}`;
+  }
+  btn.innerHTML = '🤖 Explain with AI';
+  btn.disabled  = false;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg   = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  addMsg(msg, 'user');
+  const thinking = addMsg('Thinking...', 'thinking');
+
+  try {
+    if (!lastPred) {
+      thinking.remove();
+      addMsg('Please make a prediction first using the form, then I can analyze it for you!', 'bot');
+      return;
+    }
+    const r = await fetch(`${API}/explain`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        prediction: lastPred.prediction,
+        pct_change: lastPred.pct_change,
+        signal:     lastPred.signal,
+        lag_1:      lastPred.lag_1,
+        weekofyear: lastPred.weekofyear,
+        month:      lastPred.month,
+      }),
+    });
+    const d = await r.json();
+    thinking.remove();
+    addMsg(d.explanation, 'bot');
+  } catch(e) {
+    thinking.remove();
+    addMsg(`Sorry, something went wrong: ${e.message}`, 'bot');
+  }
+}
+
+function addMsg(text, type) {
+  const box = document.getElementById('chatBox');
+  const div = document.createElement('div');
+  div.className   = type==='user'?'msg msg-user':type==='thinking'?'msg msg-thinking':'msg msg-bot';
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop   = box.scrollHeight;
+  return div;
+}
+
+function updateTable() {
+  const tbody = document.getElementById('historyBody');
+  if (!history.length) return;
+  tbody.innerHTML = history.slice(0,8).map(h =>
+    `<tr><td>${h.time}</td><td style="font-weight:500">${h.forecast}</td><td>${h.signal}</td><td>${h.pct}</td></tr>`
+  ).join('');
+}
+
+function initChart() {
+  histChart = new Chart(document.getElementById('historyChart'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Forecast ($)',
+        data: [],
+        borderColor: '#2b6cb0',
+        backgroundColor: 'rgba(43,108,176,.1)',
+        fill: true, tension: 0.4, pointRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { callback: v => '$' + (v >= 1e6 ? (v/1e6).toFixed(1)+'M' : (v/1e3).toFixed(0)+'K') } }
+      }
+    }
+  });
+}
+
+function updateChart() {
+  histChart.data.labels           = history.map(h => h.time).reverse();
+  histChart.data.datasets[0].data = history.map(h => h.value).reverse();
+  histChart.update();
+}
+</script>
+</body>
+</html>
