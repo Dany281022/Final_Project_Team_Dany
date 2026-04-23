@@ -15,7 +15,7 @@
 | Streamlit (Primary) | https://weekly-sales-forecaster-teamdany.streamlit.app/ |
 | Render API + Dashboard | https://weekly-sales-forecaster-team-dany-aie1014.onrender.com |
 | Swagger UI | https://weekly-sales-forecaster-team-dany-aie1014.onrender.com/docs |
-| GitHub | https://github.com/Dany281022/Milestone05_TeamDany |
+| GitHub | https://github.com/Dany281022/Final_Project_Team_Dany|
 
 ---
 
@@ -100,8 +100,8 @@ Final_Project_Team_Dany/
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/Dany281022/Milestone05_TeamDany.git
-cd Milestone05_TeamDany
+git clone https://github.com/Dany281022/Final_Project_Team_Dany.git
+cd Final_Project_Team_Dany
 ```
 
 ### 2. Create and activate a virtual environment
@@ -287,7 +287,7 @@ All documentation is in the `docs/` folder:
 
 | File | Contents |
 |------|----------|
-| `Milestone5_TeamDany_FinalReport.docx` | Full technical report — 10 sections, all metrics, architecture, tests, stakeholder engagement |
+| `Final_Report_TeamDany.docx` | Full technical report — 10 sections, all metrics, architecture, tests, stakeholder engagement |
 | `UserGuide_TeamDany.docx` | Step-by-step user guide with screenshots + Quick Reference Card + FAQ |
 | `Stakeholder_Documents_TeamDany.docx` | Formal handoff letter + Feedback Worksheet (13 items, 5 fixed) |
 
@@ -300,25 +300,7 @@ All documentation is in the `docs/` folder:
 - **Touchpoints:** 5 structured sessions across 15 weeks
 - **UX fixes implemented:** 5 items fixed same day (April 8, 2026)
 - **Value rating:** 4/5 — AI recommendations rated highest-value feature
-
 ---
 
-## Submission Checklist
-
-| Item | Status |
-|------|--------|
-| All report sections completed | ✅ |
-| Technical accuracy verified (real metrics from model.pkl) | ✅ |
-| Application deployed and accessible — both platforms | ✅ |
-| Tested within 24 hours of submission | ✅ |
-| User guide complete (with screenshots) | ✅ |
-| Quick reference card complete | ✅ |
-| FAQ / troubleshooting included | ✅ |
-| Stakeholder feedback documented | ✅ |
-| Handoff communication included | ✅ |
-| 24/24 automated tests passing | ✅ |
-| All files organized correctly | ✅ |
-
----
 
 *AIE1014 — AI Applied Project | AIE1017 — Generative AI and LLMs | Team Dany | Cambrian College | Winter 2026*
